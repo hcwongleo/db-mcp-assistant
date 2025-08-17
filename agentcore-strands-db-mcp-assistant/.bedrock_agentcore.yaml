@@ -1,0 +1,30 @@
+default_agent: db_mcp_assistant
+agents:
+  db_mcp_assistant:
+    name: db_mcp_assistant
+    entrypoint: app.py
+    platform: linux/arm64
+    container_runtime: docker
+    aws:
+      execution_role: arn:aws:iam::761018861641:role/AgentCoreExecution-agentcore-db-mcp-assistant-us-east-1
+      execution_role_auto_create: true
+      account: '761018861641'
+      region: us-east-1
+      ecr_repository: 761018861641.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-db_mcp_assistant
+      ecr_auto_create: false
+      network_configuration:
+        network_mode: PUBLIC
+      protocol_configuration:
+        server_protocol: HTTP
+      observability:
+        enabled: true
+    bedrock_agentcore:
+      agent_id: db_mcp_assistant-3Ml89SHjQG
+      agent_arn: arn:aws:bedrock-agentcore:us-east-1:761018861641:runtime/db_mcp_assistant-3Ml89SHjQG
+      agent_session_id: f93fc623-a01e-4fbf-925e-7787fe992078
+    codebuild:
+      project_name: bedrock-agentcore-db_mcp_assistant-builder
+      execution_role: arn:aws:iam::761018861641:role/AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-09fa97c381
+      source_bucket: bedrock-agentcore-codebuild-sources-761018861641-us-east-1
+    authorizer_configuration: null
+    oauth_configuration: null
