@@ -1,0 +1,492 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Container, 
+  Paper, 
+  TextField, 
+  Button, 
+  Typography, 
+  Box, 
+  Alert,
+  Tabs,
+  Tab,
+  Link
+} from '@mui/material';
+import { 
+  signIn, 
+  signUp,
+  confirmSignUp,
+  resendConfirmationCode,
+  forgotPassword,
+  confirmForgotPassword,
+  isAuthenticated, 
+  signOut,
+  initializeCognitoConfig 
+} from '../utils/CognitoAuth';
+
+// Cognito configuration from CDK outputs
+const COGNITO_CONFIG = {
+  userPoolId: 'us-east-1_kP2nbpFcg', // Will be replaced with actual values from CDK
+  clientId: '9hucernbhik2dj9u7ed90q7mb',
+  identityPoolId: 'us-east-1:882a2d32-6ecb-42e4-8939-10e8c5241284',
+  region: 'us-east-1'
+};
+
+
+
+const AuthWrapper = ({ children }) => {
+  const [authenticated, setAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [currentTab, setCurrentTab] = useState(0); // 0 = Sign In, 1 = Sign Up
+  const [authStep, setAuthStep] = useState('signin'); // 'signin', 'signup', 'verify', 'forgot', 'reset'
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    verificationCode: '',
+    newPassword: ''
+  });
+  const [message, setMessage] = useState({ type: '', text: '' });
+
+  useEffect(() => {
+    // Initialize Cognito configuration
+    initializeCognitoConfig(COGNITO_CONFIG);
+    
+    // Check if user is already authenticated
+    setAuthenticated(isAuthenticated());
+    setLoading(false);
+  }, []);
+
+  const handleInputChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleTabChange = (event, newValue) => {
+    setCurrentTab(newValue);
+    setMessage({ type: '', text: '' });
+    setFormData({
+      email: '',
+      password: '',
+      confirmPassword: '',
+      verificationCode: '',
+      newPassword: ''
+    });
+    setAuthStep(newValue === 0 ? 'signin' : 'signup');
+  };
+
+  const handleSignIn = async (e) => {
+    e.preventDefault();
+    setMessage({ type: '', text: '' });
+    
+    const result = await signIn(formData.email, formData.password);
+    
+    if (result.success) {
+      setMessage({ 
+        type: 'success', 
+        text: 'Sign in successful! Loading application...' 
+      });
+      setAuthenticated(true);
+    } else {
+      setMessage({ type: 'error', text: result.error });
+    }
+  };
+
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+    setMessage({ type: '', text: '' });
+
+    // Validate password strength
+    if (formData.password.length < 8) {
+      setMessage({ type: 'error', text: 'Password must be at least 8 characters long' });
+      return;
+    }
+
+    const result = await signUp(formData.email, formData.password);
+    
+    if (result.success) {
+      setMessage({ 
+        type: 'success', 
+        text: 'Account created! Please check your email for a verification code.' 
+      });
+      setAuthStep('verify');
+    } else {
+      setMessage({ type: 'error', text: result.error });
+    }
+  };
+
+  const handleVerifyEmail = async (e) => {
+    e.preventDefault();
+    setMessage({ type: '', text: '' });
+
+    const result = await confirmSignUp(formData.email, formData.verificationCode);
+    
+    if (result.success) {
+      setMessage({ 
+        type: 'success', 
+        text: 'Email verified! You can now sign in with your credentials.' 
+      });
+      setAuthStep('signin');
+      setCurrentTab(0);
+      setFormData({
+        email: formData.email, // Keep email for convenience
+        password: '',
+        confirmPassword: '',
+        verificationCode: ''
+      });
+    } else {
+      setMessage({ type: 'error', text: result.error });
+    }
+  };
+
+  const handleResendCode = async () => {
+    setMessage({ type: 'info', text: 'Resending verification code...' });
+    
+    const result = await resendConfirmationCode(formData.email);
+    
+    if (result.success) {
+      setMessage({ 
+        type: 'success', 
+        text: 'Verification code sent! Please check your email.' 
+      });
+    } else {
+      setMessage({ 
+        type: 'error', 
+        text: result.error || 'Failed to resend code. Please try again.' 
+      });
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setMessage({ type: '', text: '' });
+
+    if (!formData.email.trim()) {
+      setMessage({ type: 'error', text: 'Please enter your email address' });
+      return;
+    }
+
+    const result = await forgotPassword(formData.email);
+    
+    if (result.success) {
+      setMessage({ 
+        type: 'success', 
+        text: 'Password reset code sent! Please check your email.' 
+      });
+      setAuthStep('reset');
+    } else {
+      setMessage({ type: 'error', text: result.error });
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setMessage({ type: '', text: '' });
+
+    // Validate password confirmation
+    if (formData.newPassword !== formData.confirmPassword) {
+      setMessage({ type: 'error', text: 'Passwords do not match' });
+      return;
+    }
+
+    // Validate password strength
+    if (formData.newPassword.length < 8) {
+      setMessage({ type: 'error', text: 'Password must be at least 8 characters long' });
+      return;
+    }
+
+    const result = await confirmForgotPassword(formData.email, formData.verificationCode, formData.newPassword);
+    
+    if (result.success) {
+      setMessage({ 
+        type: 'success', 
+        text: 'Password reset successfully! You can now sign in with your new password.' 
+      });
+      setAuthStep('signin');
+      setCurrentTab(0);
+      setFormData({
+        email: formData.email, // Keep email for convenience
+        password: '',
+        confirmPassword: '',
+        verificationCode: '',
+        newPassword: ''
+      });
+    } else {
+      setMessage({ type: 'error', text: result.error });
+    }
+  };
+
+  const handleSignOut = () => {
+    signOut();
+    setAuthenticated(false);
+    setFormData({ email: '', password: '' });
+    setMessage({ type: '', text: '' });
+  };
+
+  if (loading) {
+    return (
+      <Container maxWidth="sm" sx={{ mt: 4 }}>
+        <Paper elevation={3} sx={{ p: 4, textAlign: 'center' }}>
+          <Typography>Loading...</Typography>
+        </Paper>
+      </Container>
+    );
+  }
+
+  if (!authenticated) {
+    return (
+      <Container maxWidth="sm" sx={{ mt: 4 }}>
+        <Paper elevation={3} sx={{ p: 4 }}>
+          <Typography variant="h4" component="h1" gutterBottom align="center">
+            DSQL MCP Assistant
+          </Typography>
+          <Typography variant="subtitle1" gutterBottom align="center" color="text.secondary">
+            Workshop Authentication
+          </Typography>
+
+          {message.text && (
+            <Alert severity={message.type} sx={{ mb: 2 }}>
+              {message.text}
+            </Alert>
+          )}
+
+          {authStep === 'verify' ? (
+            // Email Verification Step
+            <Box component="form" onSubmit={handleVerifyEmail}>
+              <Typography variant="h6" gutterBottom align="center">
+                Verify Your Email
+              </Typography>
+              <Typography variant="body2" gutterBottom align="center" color="text.secondary" sx={{ mb: 2 }}>
+                We sent a verification code to {formData.email}
+              </Typography>
+              <TextField
+                fullWidth
+                label="Verification Code"
+                name="verificationCode"
+                value={formData.verificationCode}
+                onChange={handleInputChange}
+                margin="normal"
+                required
+                placeholder="Enter 6-digit code"
+              />
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                sx={{ mt: 3, mb: 2 }}
+              >
+                Verify Email
+              </Button>
+              <Box sx={{ textAlign: 'center' }}>
+                <Link
+                  component="button"
+                  variant="body2"
+                  onClick={handleResendCode}
+                  sx={{ cursor: 'pointer' }}
+                >
+                  Didn't receive the code? Resend
+                </Link>
+              </Box>
+            </Box>
+          ) : authStep === 'forgot' ? (
+            // Forgot Password Step
+            <Box component="form" onSubmit={handleForgotPassword}>
+              <Typography variant="h6" gutterBottom align="center">
+                Reset Password
+              </Typography>
+              <Typography variant="body2" gutterBottom align="center" color="text.secondary" sx={{ mb: 2 }}>
+                Enter your email address and we'll send you a reset code
+              </Typography>
+              <TextField
+                fullWidth
+                label="Email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                margin="normal"
+                required
+              />
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                sx={{ mt: 3, mb: 2 }}
+              >
+                Send Reset Code
+              </Button>
+              <Box sx={{ textAlign: 'center' }}>
+                <Link
+                  component="button"
+                  variant="body2"
+                  onClick={() => setAuthStep('signin')}
+                  sx={{ cursor: 'pointer' }}
+                >
+                  Back to Sign In
+                </Link>
+              </Box>
+            </Box>
+          ) : authStep === 'reset' ? (
+            // Reset Password Step
+            <Box component="form" onSubmit={handleResetPassword}>
+              <Typography variant="h6" gutterBottom align="center">
+                Enter New Password
+              </Typography>
+              <Typography variant="body2" gutterBottom align="center" color="text.secondary" sx={{ mb: 2 }}>
+                Enter the code sent to {formData.email} and your new password
+              </Typography>
+              <TextField
+                fullWidth
+                label="Reset Code"
+                name="verificationCode"
+                value={formData.verificationCode}
+                onChange={handleInputChange}
+                margin="normal"
+                required
+                placeholder="Enter reset code"
+              />
+              <TextField
+                fullWidth
+                label="New Password"
+                name="newPassword"
+                type="password"
+                value={formData.newPassword}
+                onChange={handleInputChange}
+                margin="normal"
+                required
+                helperText="Minimum 8 characters"
+              />
+              <TextField
+                fullWidth
+                label="Confirm New Password"
+                name="confirmPassword"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                margin="normal"
+                required
+              />
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                sx={{ mt: 3, mb: 2 }}
+              >
+                Reset Password
+              </Button>
+              <Box sx={{ textAlign: 'center' }}>
+                <Link
+                  component="button"
+                  variant="body2"
+                  onClick={() => setAuthStep('signin')}
+                  sx={{ cursor: 'pointer' }}
+                >
+                  Back to Sign In
+                </Link>
+              </Box>
+            </Box>
+          ) : (
+            // Sign In / Sign Up Tabs
+            <>
+              <Tabs value={currentTab} onChange={handleTabChange} centered sx={{ mb: 3 }}>
+                <Tab label="Sign In" />
+                <Tab label="Sign Up" />
+              </Tabs>
+
+              {currentTab === 0 ? (
+                // Sign In Form
+                <Box component="form" onSubmit={handleSignIn}>
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    margin="normal"
+                    required
+                  />
+                  <TextField
+                    fullWidth
+                    label="Password"
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    margin="normal"
+                    required
+                  />
+                  <Button
+                    type="submit"
+                    fullWidth
+                    variant="contained"
+                    sx={{ mt: 3, mb: 2 }}
+                  >
+                    Sign In
+                  </Button>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Link
+                      component="button"
+                      variant="body2"
+                      onClick={() => setAuthStep('forgot')}
+                      sx={{ cursor: 'pointer' }}
+                    >
+                      Forgot Password?
+                    </Link>
+                  </Box>
+                </Box>
+              ) : (
+                // Sign Up Form
+                <Box component="form" onSubmit={handleSignUp}>
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    margin="normal"
+                    required
+                  />
+                  <TextField
+                    fullWidth
+                    label="Password"
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    margin="normal"
+                    required
+                    helperText="Minimum 8 characters"
+                  />
+                  <Button
+                    type="submit"
+                    fullWidth
+                    variant="contained"
+                    sx={{ mt: 3, mb: 2 }}
+                  >
+                    Create Account
+                  </Button>
+                </Box>
+              )}
+            </>
+          )}
+
+          <Typography variant="body2" align="center" sx={{ mt: 2 }} color="text.secondary">
+            🎓 Workshop participants: Create your own account to access the DSQL MCP Assistant with your AWS credentials
+          </Typography>
+        </Paper>
+      </Container>
+    );
+  }
+
+  return (
+    <div>
+
+      {children}
+    </div>
+  );
+};
+
+export default AuthWrapper;
