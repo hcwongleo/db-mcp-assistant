@@ -3,7 +3,7 @@
 This solution provides a Generative AI application reference that allows users to interact with databases through a natural language interface using MCP (Model Context Protocol). The solution leverages **[AWS Bedrock AgentCore](https://aws.amazon.com/bedrock/agentcore/)**, a managed service that enables you to deploy, run, and scale custom agent applications, along with the **[Strands Agents SDK](https://strandsagents.com/)** to build an agent that connects to databases via MCP servers, providing data analysis capabilities through a web application interface.
 
 <div align="center">
-<img src="./images/data-analyst-assistant-agentcore-strands-agents-sdk.gif" alt="Conversational Data Analyst Assistant Solution with Amazon Bedrock AgentCore">
+<img src="./images/All_Solution-DB_MCP_Agentcore.drawio.png" alt="DB MCP Assistant Solution with Amazon Bedrock AgentCore">
 </div>
 
 🤖 A DB MCP Assistant offers an approach to database analysis that enables enterprises to interact with their databases through natural language conversations using MCP (Model Context Protocol) rather than complex SQL queries. This kind of assistant provides an intuitive question-answering interface for database analysis and can be improved by offering data visualizations to enhance the user experience.
