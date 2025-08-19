@@ -28,7 +28,7 @@ This solution provides a Generative AI application reference that allows users t
 
 The following architecture diagram illustrates a reference solution for a generative AI DB MCP assistant that is built using Strands Agents SDK and powered by Amazon Bedrock. This assistant enables users to access structured data that is stored in databases via MCP connections through a question-answering interface.
 
-![Video Games Sales Assistant](./images/gen-ai-assistant-diagram.png)
+![DB MCP Assistant Architecture](./images/All_Solution-DB_MCP_Agentcore.drawio.png)
 
 > [!IMPORTANT]
 > This sample application is meant for demo purposes and is not production ready. Please make sure to validate the code with your organizations security best practices.
@@ -94,25 +94,19 @@ The deployment consists of two main steps:
 
 ## Application Features
 
-The following images showcase a conversational experience analysis that includes: natural language answers, the reasoning process used by the LLM to generate SQL queries, the database records retrieved from those queries, and the resulting chart visualizations.
+The following images showcase the user experience flow:
 
-![Video Games Sales Assistant](./images/preview.png)
+![DB MCP Assistant Login](./images/login.png)
 
-- **Conversational interface with an agent responding to user questions**
+- **Secure Authentication**: Users can create accounts and sign in securely
 
-![Video Games Sales Assistant](./images/preview1.png)
+![DB MCP Assistant Credentials](./images/credentials.png)
 
-- **Raw query results displayed in tabular format**
+- **Credential Configuration**: Easy setup of AWS credentials and database endpoints
 
-![Video Games Sales Assistant](./images/preview2.png)
+![DB MCP Assistant Chat](./images/chat.png)
 
-- **Chart visualization generated from the agent's answer and the data query results (created using [Apexcharts](https://apexcharts.com/))**.
-
-![Video Games Sales Assistant](./images/preview3.png)
-
-- **Summary and conclusion derived from the data analysis conversation**
-
-![Video Games Sales Assistant](./images/preview4.png)
+- **Conversational AI Interface**: Natural language interaction with databases through an intuitive chat interface
 
 ## Thank You
 
