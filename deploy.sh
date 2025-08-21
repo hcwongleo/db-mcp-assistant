@@ -70,8 +70,7 @@ check_prerequisites() {
 
 # ----- Config -----
 STACK_NAME=${1:-CdkAgentCoreStrandsDbMcpAssistantStack}
-MEMORY_NAME=${2:-DbMcpAssistantMemory}
-AGENT_NAME=${3:-db_mcp_assistant}
+AGENT_NAME=${2:-db_mcp_assistant}
 REGION=$(aws configure get region)
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 
@@ -81,8 +80,7 @@ check_prerequisites
 echo "🚀 Starting DB MCP Assistant deployment..."
 echo "📍 Region: $REGION"
 echo "🏷️  Account ID: $ACCOUNT_ID"
-echo "� SCDK Stack: $STACK_NAME"
-echo "🧠 Memory Name: $MEMORY_NAME"
+echo "📦 CDK Stack: $STACK_NAME"
 echo "🤖 Agent Name: $AGENT_NAME"
 echo ""
 
@@ -113,12 +111,10 @@ log_info "Retrieving CDK outputs..."
 DSQL_CLUSTER_ARN=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Outputs[?OutputKey=='DSQLClusterArn'].OutputValue" --output text 2>/dev/null || echo "")
 DSQL_CLUSTER_ID=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Outputs[?OutputKey=='DSQLClusterId'].OutputValue" --output text 2>/dev/null || echo "")
 AGENT_CORE_ROLE=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Outputs[?OutputKey=='AgentCoreMyRoleARN'].OutputValue" --output text 2>/dev/null || echo "")
-MEMORY_ID_SSM_PARAMETER=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Outputs[?OutputKey=='MemoryIdSSMParameter'].OutputValue" --output text 2>/dev/null || echo "")
 
 echo "   DSQL Cluster ARN: ${DSQL_CLUSTER_ARN:-Not found}"
 echo "   DSQL Cluster ID: ${DSQL_CLUSTER_ID:-Not found}"
 echo "   Agent Core Role: ${AGENT_CORE_ROLE:-Not found}"
-echo "   Memory SSM Parameter: ${MEMORY_ID_SSM_PARAMETER:-Not found}"
 
 cd ..
 
@@ -139,19 +135,9 @@ log_info "Installing Python dependencies..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# ----- 3. Create Memory -----
+# ----- 3. Setup Agent Runtime -----
 echo ""
-log_info "Step 3: Creating AgentCore Memory..."
-python scripts/agentcore_memory.py create "$MEMORY_NAME" "$MEMORY_ID_SSM_PARAMETER"
-
-# ----- 4. Test Memory -----
-echo ""
-log_info "Step 4: Testing Memory..."
-python scripts/agentcore_memory.py list
-
-# ----- 5. Setup Agent Runtime -----
-echo ""
-log_info "Step 5: Setting up Agent Runtime..."
+log_info "Step 3: Setting up Agent Runtime..."
 
 # Clean up any existing agentcore configuration
 log_info "Cleaning up existing agentcore configuration..."
@@ -192,10 +178,10 @@ else
     echo "   agentcore launch --auto-update-on-conflict"
 fi
 
-# ----- 6. Frontend Deployment -----
+# ----- 4. Frontend Deployment -----
 echo ""
-log_info "Step 6: Deploying Frontend..."
-cd ../amplify-db-mcp-assistant-agentcore-strands
+log_info "Step 4: Deploying Frontend..."
+cd ../frontend-db-mcp-assistant-agentcore-strands
 
 log_info "Installing frontend dependencies..."
 npm install
@@ -204,7 +190,7 @@ log_info "Configuring frontend with AgentCore ARN..."
 # Get the Agent Runtime ARN from agentcore status
 cd ../agentcore-strands-db-mcp-assistant
 AGENT_ARN=$(agentcore status 2>/dev/null | grep "Agent Arn:" | sed 's/.*Agent Arn: //' | sed 's/ │.*//' | head -1 | xargs)
-cd ../amplify-db-mcp-assistant-agentcore-strands
+cd ../frontend-db-mcp-assistant-agentcore-strands
 
 if [ -n "$AGENT_ARN" ]; then
     echo "Configuring frontend with Agent ARN: $AGENT_ARN"
@@ -233,13 +219,10 @@ npm start &
 
 log_success "Frontend deployed successfully!"
 cd ../agentcore-strands-db-mcp-assistant
-# ----- 7.
-
 echo "🎉 Complete deployment finished!"
 echo ""
 echo "📋 Deployment Summary:"
 echo "   ✅ CDK Infrastructure deployed"
-echo "   ✅ AgentCore Memory created"
 echo "   ✅ AgentCore Agent deployed and running"
 echo "   ✅ Frontend built and started"
 echo ""

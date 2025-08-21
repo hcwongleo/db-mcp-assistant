@@ -33,14 +33,13 @@ The following architecture diagram illustrates a reference solution for a genera
 > [!IMPORTANT]
 > This sample application is meant for demo purposes and is not production ready. Please make sure to validate the code with your organizations security best practices.
 
-### AgentCore Runtime & Memory Infrastructure
+### AgentCore Runtime Infrastructure
 
-**Amazon Bedrock AgentCore** is a fully managed service that enables you to deploy, run, and scale your custom agent applications with built-in runtime and memory capabilities.
+**Amazon Bedrock AgentCore** is a fully managed service that enables you to deploy, run, and scale your custom agent applications with built-in runtime capabilities.
 
 - **[Amazon Bedrock AgentCore Runtime](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agents-tools-runtime.html)**: Provides the managed execution environment with invocation endpoints (`/invocations`) and health monitoring (`/ping`) for your agent instances
-- **[Amazon Bedrock AgentCore Memory](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory.html)**: A fully managed service that gives AI agents the ability to remember, learn, and evolve through interactions by capturing events, transforming them into memories, and retrieving relevant context when needed
 
-The AgentCore infrastructure handles all storage complexity and provides efficient retrieval without requiring developers to manage underlying infrastructure, ensuring continuity and traceability across agent interactions.
+The AgentCore infrastructure handles all runtime complexity and provides efficient execution without requiring developers to manage underlying infrastructure.
 
 ### CDK Infrastructure Deployment
 
@@ -73,18 +72,69 @@ The **user interaction workflow** operates as follows:
 
 - The web application sends user business questions to the AgentCore Invoke
 - The Strands Agent (powered by Claude 3.7 Sonnet) processes natural language and determines when to execute database queries
-- The agent's built-in tools execute SQL queries against the Aurora PostgreSQL database and formulate an answer to the question
-- AgentCore Memory captures session interactions and retrieves previous conversations for context
+- The agent's built-in tools execute SQL queries against the database via MCP connections and formulate an answer to the question
 - After the agent's response is received by the web application, the raw data query results are retrieved from the DynamoDB table to display both the answer and the corresponding records
 - For chart generation, the application invokes a model (powered by Claude 3.5 Sonnet) to analyze the agent's answer and raw data query results to generate the necessary data to render an appropriate chart visualization
 
+## Prerequisites
+
+### AWS Credentials Setup
+
+#### Option 1: AWS CloudShell (Recommended for Quick Testing)
+
+For quick testing and deployment, you can use AWS CloudShell which provides temporary AWS credentials:
+
+1. **Open AWS CloudShell** in your AWS Console
+2. **Clone the repository**:
+   ```bash
+   git clone https://github.com/hcwongleo/db-mcp-assistant.git
+   cd db-mcp-assistant
+   ```
+3. **Run the deployment script**:
+   ```bash
+   chmod +x deploy.sh
+   ./deploy.sh
+   ```
+
+#### Option 2: Local Development with AWS CLI
+
+For local development, configure your AWS credentials:
+
+```bash
+aws configure
+# Enter your AWS Access Key ID, Secret Access Key, and preferred region
+```
+
+Or set environment variables:
+```bash
+export AWS_ACCESS_KEY_ID=your_access_key
+export AWS_SECRET_ACCESS_KEY=your_secret_key
+export AWS_SESSION_TOKEN=your_session_token  # if using temporary credentials
+```
+
+### Required Tools
+
+- **AWS CLI** - [Installation Guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+- **AWS CDK** - Install with: `npm install -g aws-cdk`
+- **Node.js 18+** - [Download](https://nodejs.org/)
+- **Python 3.10+** - [Download](https://www.python.org/downloads/)
+
 ## Deployment Instructions
 
-The deployment consists of two main steps:
+The deployment consists of three main steps:
 
-1. **Back-End Deployment - [Data Source and Configuration Management Deployment with CDK](./cdk-agentcore-strands-data-analyst-assistant/)**
-1. **Agent Deployment - [Strands Agent Infrastructure Deployment with AgentCore](./agentcore-strands-data-analyst-assistant/)**
-2. **Front-End Implementation - [Integrating AgentCore with a Ready-to-Use Data Analyst Assistant Application](./amplify-video-games-sales-assistant-agentcore-strands/)**
+1. **Back-End Deployment** - Data Source and Configuration Management Deployment with CDK
+2. **Agent Deployment** - Strands Agent Infrastructure Deployment with AgentCore  
+3. **Front-End Implementation** - Integrating AgentCore with a Ready-to-Use DB MCP Assistant Application
+
+### Quick Deployment
+
+Run the automated deployment script:
+
+```bash
+chmod +x deploy.sh
+./deploy.sh
+```
 
 > [!NOTE]
 > *It is recommended to use the Oregon (us-west-2) or N. Virginia (us-east-1) regions to deploy the application.*
@@ -107,9 +157,3 @@ The following images showcase the user experience flow:
 ![DB MCP Assistant Chat](./images/chat.png)
 
 - **Conversational AI Interface**: Natural language interaction with databases through an intuitive chat interface
-
-## Thank You
-
-## License
-
-This project is licensed under the Apache-2.0 License.
